@@ -7,13 +7,12 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmployeeModel {
+public class EmployeeInput {
 
-    private String id;
     private String name;
     private Integer salary;
     private Integer age;
     private String title;
     private String email;
+    
 }
-

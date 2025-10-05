@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.reliaquest.api.client.ApiClient;
-import com.reliaquest.api.model.EmployeeModel;
+import com.reliaquest.api.model.Employee;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,11 +20,11 @@ public class EmployeeService {
     
     private final ApiClient apiClient;
 
-    public List<EmployeeModel> getAll() {
+    public List<Employee> getAll() {
         return apiClient.getAll();
     }
 
-    public List<EmployeeModel> getTopTenHighestEarningEmployeeNames() {
+    public List<Employee> getTopTenHighestEarningEmployeeNames() {
         return null;
         // implement java stream to sort returned list of employees by highest salary, 
         // then returning the top 10

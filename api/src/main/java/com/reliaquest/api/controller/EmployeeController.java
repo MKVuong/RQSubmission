@@ -1,11 +1,11 @@
 package com.reliaquest.api.controller;
 
-import com.reliaquest.api.model.EmployeeModel;
+import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.service.EmployeeService;
 
 import lombok.RequiredArgsConstructor;
 
-import com.reliaquest.api.model.EmployeeInputModel;
+import com.reliaquest.api.model.EmployeeInput;
 
 import java.util.List;
 
@@ -16,22 +16,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/employee")
 @RequiredArgsConstructor
-public class EmployeeController implements IEmployeeController<EmployeeModel, EmployeeInputModel> {
+public class EmployeeController implements IEmployeeController<Employee, EmployeeInput> {
 
     private final EmployeeService employeeService;
     
     @Override
-    public ResponseEntity<List<EmployeeModel>> getAllEmployees() {
+    public ResponseEntity<List<Employee>> getAllEmployees() {
         return ResponseEntity.ok(employeeService.getAll());
     }
 
     @Override
-    public ResponseEntity<List<EmployeeModel>> getEmployeesByNameSearch(String name) {
+    public ResponseEntity<List<Employee>> getEmployeesByNameSearch(String name) {
         return null;
     }
 
     @Override
-    public ResponseEntity<EmployeeModel> getEmployeeById(String id) {
+    public ResponseEntity<Employee> getEmployeeById(String id) {
         return null;
     }
 
@@ -46,7 +46,7 @@ public class EmployeeController implements IEmployeeController<EmployeeModel, Em
     }
 
     @Override
-    public ResponseEntity<EmployeeModel> createEmployee(EmployeeInputModel input) {
+    public ResponseEntity<Employee> createEmployee(EmployeeInput input) {
         return null;
     }
 

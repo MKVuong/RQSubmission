@@ -13,13 +13,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.reliaquest.api.model.EmployeeModel;
+import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.ApiListResponse;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
 public class ApiClient {
+
+    // TODO: Handle error 429 with some Retry mechanism
     
     private final RestTemplate restTemplate;
     
@@ -27,15 +31,15 @@ public class ApiClient {
 
     String baseUrl = "http://localhost:8112/api/v1/employee";
 
-    public List<EmployeeModel> getAll() {
+    public List<Employee> getAll() {
         System.out.println("entered ApiClient's getAll() method...");
         //HttpHeaders httpHeaders = new HttpHeaders();
         //httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-ResponseEntity<List<EmployeeModel>> responseEntity = restTemplate.exchange(
-            baseUrl, HttpMethod.GET, null, new ParameterizedTypeReference<List<EmployeeModel>>(){});
+ResponseEntity<ApiListResponse<List<Employee>>> responseEntity = restTemplate.exchange(
+            baseUrl, HttpMethod.GET, null, new ParameterizedTypeReference<ApiListResponse<List<Employee>>>(){});
         
         System.out.println("PRINTING RESPONSE ENTITY'S getBody()");
         System.out.println(responseEntity.getBody());
-        return responseEntity.getBody();
+        return responseEntity.getBody().getData();
     }
 }
