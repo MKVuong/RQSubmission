@@ -1,2 +1,2 @@
-spring.application.name: employee-api
+spring.application.name: ea #employee-api
 server.port: 8111

@@ -1,15 +1,18 @@
 package com.reliaquest.api.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Employee {
+@Builder
+public class Employee implements Serializable {
 
     private String id;
 
@@ -28,4 +31,3 @@ public class Employee {
     @JsonProperty("employee_email")
     private String email;
 }
-
