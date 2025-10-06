@@ -1,10 +1,9 @@
 package com.reliaquest.api.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.model.ApiDataResponse;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeInput;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,18 +16,16 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriBuilder;
-import org.springframework.web.util.UriComponents;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ApiClient {
 
-    /*- TODO: 
-    Core implementations for happy paths, 
+    /*- TODO:
+    Core implementations for happy paths,
     exception handling and specifically error 429 with some Retry mechanism,
     logging,
     testing
@@ -42,8 +39,6 @@ public class ApiClient {
 
     public List<Employee> getAllEmployees() {
         log.info("Entered ApiClient's getAllEmployees method...");
-        // HttpHeaders httpHeaders = new HttpHeaders();
-        // httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         try {
             ResponseEntity<ApiDataResponse<List<Employee>>> responseEntity = restTemplate.exchange(
                     baseUrl,
@@ -65,31 +60,12 @@ public class ApiClient {
 
     public Employee getEmployeeById(String id) {
         log.info("Entered ApiClient's getEmployeeById method with id: {}.", id);
-        //HttpHeaders headers = new HttpHeaders();
-        //headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-
-        //HttpEntity<?> entity = new HttpEntity<>(headers);
-
         try {
-//             Map<String, String> uriVariables = new HashMap<>();
-// uriVariables.put("id", id);
-// UriComponents encode = UriComponentsBuilder.newInstance()
-//         .scheme("http")
-//         .host("localhost")
-//         .port(8112)
-//         .path("api/v1/employee")
-//         .pathSegment("{id}")
-//         .buildAndExpand(uriVariables)
-//         .encode();
-// log.info("encode object: {}", encode);
-
-
-           //String url = baseUrl + "/{id}";
             ResponseEntity<ApiDataResponse<Employee>> response = restTemplate.exchange(
                     baseUrl + "/{id}",
                     HttpMethod.GET,
                     null,
-                    new ParameterizedTypeReference<ApiDataResponse<Employee>>(){},
+                    new ParameterizedTypeReference<ApiDataResponse<Employee>>() {},
                     id);
             if (response.getStatusCode().is2xxSuccessful()) {
                 Employee employee = response.getBody().getData();
@@ -97,10 +73,24 @@ public class ApiClient {
                 log.info("HTTP Status Code: {}", response.getStatusCode());
                 return employee;
             } else {
-                log.warn("Error: " + response.getStatusCode());
+                log.warn("Unsuccessful: " + response.getStatusCode());
+            }
+        } catch (HttpClientErrorException hcee) {
+            if (hcee.getStatusCode().value() == 429) {
+                log.error(
+                        "Too Many Requests: 429 error occurred during api client's getEmployeeById method with error: {}",
+                        hcee.getMessage(),
+                        hcee);
+                // retry mechanism
+            } else {
+                log.error(
+                        "HttpClientErrorException occurred during api client's getEmployeeById with error: {} and Status Code: {}",
+                        hcee.getMessage(),
+                        hcee.getStatusCode(),
+                        hcee);
             }
         } catch (Exception e) {
-            log.error("Exception occurred during api client's getEmployeeById method with error: {}", e.getMessage(), e);
+            log.error("Exception occurred during api client's getEmployeeById with error: {}", e.getMessage(), e);
         }
         return null;
     }
@@ -108,21 +98,62 @@ public class ApiClient {
     public Employee addEmployee(EmployeeInput employeeInput) {
         log.info("Entered ApiClient's addEmployee method with employeeInput: {}.", employeeInput);
         HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<EmployeeInput> entity = new HttpEntity<>(employeeInput, headers);
 
-        ResponseEntity<ApiDataResponse<Employee>> response = restTemplate.exchange(baseUrl, HttpMethod.POST, entity, new ParameterizedTypeReference<ApiDataResponse<Employee>>(){});
+        ResponseEntity<ApiDataResponse<Employee>> response = restTemplate.exchange(
+                baseUrl, HttpMethod.POST, entity, new ParameterizedTypeReference<ApiDataResponse<Employee>>() {});
         if (response.getStatusCode().is2xxSuccessful()) {
-            log.info("Employee creation successful with statusCode: {} and body: {}.", response.getStatusCode(), response.getBody().getData());
+            log.info(
+                    "Employee creation successful with statusCode: {} and body: {}.",
+                    response.getStatusCode(),
+                    response.getBody().getData());
             return response.getBody().getData();
         } else {
-            log.warn("Error: " + response.getStatusCode());
+            log.warn("Unsuccessful: " + response.getStatusCode());
         }
         return null;
     }
 
-    public String deleteEmployeeById(String id) {
+    public String deleteEmployeeByName(String nameInput) {
+        log.info("Entered ApiClient's deleteEmployeeByName method with name: {}.", nameInput);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        try {
+            HttpEntity<String> entity =
+                    new HttpEntity<>(new ObjectMapper().writeValueAsString(Map.of("name", nameInput)), headers);
+
+            ResponseEntity<ApiDataResponse<Boolean>> response = restTemplate.exchange(
+                    baseUrl, HttpMethod.DELETE, entity, new ParameterizedTypeReference<ApiDataResponse<Boolean>>() {});
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info(
+                        "Employee deletion successful with statusCode: {} and body: {}.",
+                        response.getStatusCode(),
+                        response.getBody().getData());
+                return nameInput;
+            } else {
+                log.warn("Unsuccessful: " + response.getStatusCode());
+            }
+        } catch (HttpClientErrorException hcee) {
+            if (hcee.getStatusCode().value() == 429) {
+                log.error(
+                        "Too Many Requests: 429 error occurred during api client's deleteEmployeeByName method with error: {}",
+                        hcee.getMessage(),
+                        hcee);
+                // retry mechanism
+            } else {
+                log.error(
+                        "HttpClientErrorException occurred during api client's deleteEmployeeByName with error: {} and Status Code: {}",
+                        hcee.getMessage(),
+                        hcee.getStatusCode(),
+                        hcee);
+            }
+        } catch (Exception e) {
+            log.error("Exception occurred during api client's deleteEmployeeByName with error: {}", e.getMessage(), e);
+        }
+
         return null;
     }
 }

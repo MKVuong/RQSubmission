@@ -14,7 +14,7 @@ public class EmployeeInput {
 
     @NotBlank(message = "Name is mandatory")
     private String name;
-    
+
     @Min(value = 1, message = "Salary must be positive")
     private Integer salary;
 

@@ -22,8 +22,8 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
     }
 
     @Override
-    public ResponseEntity<List<Employee>> getEmployeesByNameSearch(String name) {
-        return null;
+    public ResponseEntity<List<Employee>> getEmployeesByNameSearch(String searchString) {
+        return ResponseEntity.ok(employeeService.getEmployeesByNameSearch(searchString));
     }
 
     @Override
@@ -33,12 +33,12 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
 
     @Override
     public ResponseEntity<Integer> getHighestSalaryOfEmployees() {
-        return null;
+        return ResponseEntity.ok(employeeService.getHighestSalaryOfEmployees());
     }
 
     @Override
     public ResponseEntity<List<String>> getTopTenHighestEarningEmployeeNames() {
-        return null;
+        return ResponseEntity.ok(employeeService.getTopTenHighestEarningEmployeeNames());
     }
 
     @Override
@@ -48,6 +48,6 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
 
     @Override
     public ResponseEntity<String> deleteEmployeeById(String id) {
-        return null;
+        return ResponseEntity.ok(employeeService.deleteEmployeeById(id));
     }
 }
