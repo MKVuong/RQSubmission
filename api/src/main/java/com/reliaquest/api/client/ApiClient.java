@@ -1,6 +1,8 @@
 package com.reliaquest.api.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reliaquest.api.config.ApiRetryable;
 import com.reliaquest.api.model.ApiDataResponse;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeInput;
@@ -15,6 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Recover;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -24,21 +27,15 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class ApiClient {
 
-    /*- TODO:
-    Core implementations for happy paths,
-    exception handling and specifically error 429 with some Retry mechanism,
-    logging,
-    testing
-    */
-
     private final RestTemplate restTemplate;
+
+    private final String baseUrl;
 
     HttpEntity<String> httpEntity;
 
-    String baseUrl = "http://localhost:8112/api/v1/employee";
-
+    @ApiRetryable
     public List<Employee> getAllEmployees() {
-        log.info("Entered ApiClient's getAllEmployees method...");
+        log.info("Entered ApiClient.getAllEmployees method.");
         try {
             ResponseEntity<ApiDataResponse<List<Employee>>> responseEntity = restTemplate.exchange(
                     baseUrl,
@@ -47,19 +44,25 @@ public class ApiClient {
                     new ParameterizedTypeReference<ApiDataResponse<List<Employee>>>() {});
 
             if (responseEntity != null && responseEntity.hasBody()) {
-                log.info("Printing responseEntity.getBody(): \n{}", responseEntity.getBody());
+                log.info("Printing responseEntity's body: {}", responseEntity.getBody());
                 return Optional.ofNullable(responseEntity.getBody())
                         .map(ApiDataResponse::getData)
                         .orElse(null);
             }
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode().value() == 429) {
+                log.warn("Too Many Requests with error code 429.");
+                throw ex;
+            }
         } catch (Exception e) {
-            log.warn("Exception occurred during api client's getAllEmployees method with error: {}", e);
+            log.error("Exception occurred during api client's getAllEmployees method with error: {}", e.getMessage());
         }
         return null;
     }
 
+    @ApiRetryable
     public Employee getEmployeeById(String id) {
-        log.info("Entered ApiClient's getEmployeeById method with id: {}.", id);
+        log.info("Entered ApiClient.getEmployeeById method with id: {}.", id);
         try {
             ResponseEntity<ApiDataResponse<Employee>> response = restTemplate.exchange(
                     baseUrl + "/{id}",
@@ -67,57 +70,62 @@ public class ApiClient {
                     null,
                     new ParameterizedTypeReference<ApiDataResponse<Employee>>() {},
                     id);
-            if (response.getStatusCode().is2xxSuccessful()) {
+            if (response != null
+                    && response.hasBody()
+                    && response.getStatusCode().is2xxSuccessful()) {
                 Employee employee = response.getBody().getData();
-                log.info("Data of Response Body: {}", employee);
-                log.info("HTTP Status Code: {}", response.getStatusCode());
+                log.info("Employee found with id: {} and details: {}.", id, employee);
                 return employee;
-            } else {
-                log.warn("Unsuccessful: " + response.getStatusCode());
             }
-        } catch (HttpClientErrorException hcee) {
-            if (hcee.getStatusCode().value() == 429) {
-                log.error(
-                        "Too Many Requests: 429 error occurred during api client's getEmployeeById method with error: {}",
-                        hcee.getMessage(),
-                        hcee);
-                // retry mechanism
-            } else {
-                log.error(
-                        "HttpClientErrorException occurred during api client's getEmployeeById with error: {} and Status Code: {}",
-                        hcee.getMessage(),
-                        hcee.getStatusCode(),
-                        hcee);
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode().value() == 429) {
+                log.warn("Too Many Requests with error code 429.");
+                throw ex;
+            } else if (ex.getStatusCode().value() == 404) {
+                log.warn("Employee with id: {} not found.", id);
             }
         } catch (Exception e) {
-            log.error("Exception occurred during api client's getEmployeeById with error: {}", e.getMessage(), e);
+            log.error("Exception occurred during ApiClient.getEmployeeById method with error: {}", e.getMessage());
+            throw e;
         }
         return null;
     }
 
+    @ApiRetryable
     public Employee addEmployee(EmployeeInput employeeInput) {
-        log.info("Entered ApiClient's addEmployee method with employeeInput: {}.", employeeInput);
+        log.info("Entered ApiClient.addEmployee method with employeeInput: {}.", employeeInput);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-
         HttpEntity<EmployeeInput> entity = new HttpEntity<>(employeeInput, headers);
 
-        ResponseEntity<ApiDataResponse<Employee>> response = restTemplate.exchange(
-                baseUrl, HttpMethod.POST, entity, new ParameterizedTypeReference<ApiDataResponse<Employee>>() {});
-        if (response.getStatusCode().is2xxSuccessful()) {
-            log.info(
-                    "Employee creation successful with statusCode: {} and body: {}.",
-                    response.getStatusCode(),
-                    response.getBody().getData());
-            return response.getBody().getData();
-        } else {
-            log.warn("Unsuccessful: " + response.getStatusCode());
+        try {
+            ResponseEntity<ApiDataResponse<Employee>> response = restTemplate.exchange(
+                    baseUrl, HttpMethod.POST, entity, new ParameterizedTypeReference<ApiDataResponse<Employee>>() {});
+            if (response != null
+                    && response.hasBody()
+                    && response.getStatusCode().is2xxSuccessful()) {
+                log.info(
+                        "Employee creation successful with statusCode: {} and data: {}.",
+                        response.getStatusCode(),
+                        response.getBody().getData());
+                return response.getBody().getData();
+            } else {
+                log.warn("Employee creation unsuccessful: " + response.getStatusCode());
+            }
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode().value() == 429) {
+                log.warn("Too Many Requests with error code 429.");
+                throw ex;
+            }
+        } catch (Exception e) {
+            log.error("Exception occurred during ApiClient.addEmployee method with error: {}", e.getMessage());
         }
         return null;
     }
 
+    @ApiRetryable
     public String deleteEmployeeByName(String nameInput) {
-        log.info("Entered ApiClient's deleteEmployeeByName method with name: {}.", nameInput);
+        log.info("Entered ApiClient.deleteEmployeeByName method with name: {}.", nameInput);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -127,33 +135,37 @@ public class ApiClient {
 
             ResponseEntity<ApiDataResponse<Boolean>> response = restTemplate.exchange(
                     baseUrl, HttpMethod.DELETE, entity, new ParameterizedTypeReference<ApiDataResponse<Boolean>>() {});
-            if (response.getStatusCode().is2xxSuccessful()) {
+            if (response != null
+                    && response.hasBody()
+                    && response.getStatusCode().is2xxSuccessful()) {
                 log.info(
-                        "Employee deletion successful with statusCode: {} and body: {}.",
+                        "Employee deletion successful with statusCode: {} and data: {}.",
                         response.getStatusCode(),
                         response.getBody().getData());
                 return nameInput;
             } else {
-                log.warn("Unsuccessful: " + response.getStatusCode());
+                log.warn("Employee deletion unsuccessful: " + response.getStatusCode());
             }
-        } catch (HttpClientErrorException hcee) {
-            if (hcee.getStatusCode().value() == 429) {
-                log.error(
-                        "Too Many Requests: 429 error occurred during api client's deleteEmployeeByName method with error: {}",
-                        hcee.getMessage(),
-                        hcee);
-                // retry mechanism
-            } else {
-                log.error(
-                        "HttpClientErrorException occurred during api client's deleteEmployeeByName with error: {} and Status Code: {}",
-                        hcee.getMessage(),
-                        hcee.getStatusCode(),
-                        hcee);
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode().value() == 429) {
+                log.warn("Too Many Requests with error code 429.");
+                throw ex;
             }
+        } catch (JsonProcessingException e) {
+            log.error(
+                    "JsonProcessingException occurred during ApiClient.deleteEmployeeByName method with error: {}",
+                    e.getMessage());
+            throw new RuntimeException(e);
         } catch (Exception e) {
-            log.error("Exception occurred during api client's deleteEmployeeByName with error: {}", e.getMessage(), e);
+            log.error("Exception occurred during ApiClient.deleteEmployeeByName method with error: {}", e.getMessage());
+            throw e;
         }
+        return null;
+    }
 
+    @Recover
+    public String retriesExhausted(HttpClientErrorException.TooManyRequests ex) {
+        log.warn("Max retry attempts reached. Try again later...", ex.getMessage());
         return null;
     }
 }

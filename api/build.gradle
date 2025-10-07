@@ -5,7 +5,9 @@ plugins {
 dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-}
+    implementation 'org.springframework.retry:spring-retry:2.0.3'
+    implementation 'org.springframework:spring-aspects:6.1.5'
+ }
 
 springBoot {
     mainClass = 'com.reliaquest.api.ApiApplication'

@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmployeeService {
 
-    // use client to call Server API to interact with its mock employees
-
     private final ApiClient apiClient;
 
     public List<Employee> getAll() {
@@ -22,9 +20,14 @@ public class EmployeeService {
     }
 
     public List<Employee> getEmployeesByNameSearch(String searchString) {
-        return getAll().stream()
-                .filter(e -> e.getName().toLowerCase().contains(searchString.toLowerCase()))
-                .toList();
+        List<Employee> allEmployees = getAll();
+        if (allEmployees == null) {
+            return null;
+        } else {
+            return allEmployees.stream()
+                    .filter(e -> e.getName().toLowerCase().contains(searchString.toLowerCase()))
+                    .toList();
+        }
     }
 
     public Employee getEmployeeById(String id) {
@@ -54,8 +57,11 @@ public class EmployeeService {
     }
 
     public String deleteEmployeeById(String id) {
-        return Optional.ofNullable(getEmployeeById(id))
-                .map(employee -> apiClient.deleteEmployeeByName(employee.getName()))
-                .orElse(null);
+        Employee employee = getEmployeeById(id);
+        if (employee != null) {
+            return apiClient.deleteEmployeeByName(employee.getName());
+        } else {
+            return null;
+        }
     }
 }
