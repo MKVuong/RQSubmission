@@ -4,8 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
+import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.service.EmployeeService;
 import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,9 +14,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import com.reliaquest.api.model.Employee;
-import com.reliaquest.api.service.EmployeeService;
 
 public class EmployeeControllerTest {
     @Mock
@@ -31,7 +29,7 @@ public class EmployeeControllerTest {
 
     @Test
     void getAllEmployeesReturnOkWhenEmployeesExist() {
-        
+
         List<Employee> mockEmployees = List.of(new Employee("1", "chad", 50, 74, "Beans Engineer", "chad@hotmail.com"));
         when(employeeService.getAll()).thenReturn(mockEmployees);
 
@@ -44,7 +42,7 @@ public class EmployeeControllerTest {
 
     @Test
     void getAllEmployeesShouldReturnNoContentWhenEmployeeListIsEmpty() {
-        
+
         when(employeeService.getAll()).thenReturn(List.of());
 
         ResponseEntity<List<Employee>> response = employeeController.getAllEmployees();
