@@ -1,12 +1,14 @@
 package com.reliaquest.api;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 class ApiApplicationTest {
-
-    // @Test
-    void someTest() {
-        // do the thing here
+    @Test
+    void contextLoads() {
+        // Ensure the Spring context loads without issues
     }
 }

@@ -111,7 +111,7 @@ public class ApiClient {
                         response.getBody().getData());
                 return response.getBody().getData();
             } else {
-                log.warn("Employee creation unsuccessful: " + response.getStatusCode());
+                log.warn("Employee creation unsuccessful. Response: {}", response);
             }
         } catch (HttpClientErrorException ex) {
             if (ex.getStatusCode().value() == 429) {
@@ -145,7 +145,7 @@ public class ApiClient {
                         response.getBody().getData());
                 return nameInput;
             } else {
-                log.warn("Employee deletion unsuccessful: " + response.getStatusCode());
+                log.warn("Employee deletion unsuccessful. Response: {}", response);
             }
         } catch (HttpClientErrorException ex) {
             if (ex.getStatusCode().value() == 429) {
