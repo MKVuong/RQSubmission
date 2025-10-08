@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -29,7 +30,8 @@ public class ApiClient {
 
     private final RestTemplate restTemplate;
 
-    private final String baseUrl;
+    @Value("${external.api.base-url}")
+    private String baseUrl;
 
     HttpEntity<String> httpEntity;
 
@@ -44,7 +46,6 @@ public class ApiClient {
                     new ParameterizedTypeReference<ApiDataResponse<List<Employee>>>() {});
 
             if (responseEntity != null && responseEntity.hasBody()) {
-                log.info("Printing responseEntity's body: {}", responseEntity.getBody());
                 return Optional.ofNullable(responseEntity.getBody())
                         .map(ApiDataResponse::getData)
                         .orElse(null);

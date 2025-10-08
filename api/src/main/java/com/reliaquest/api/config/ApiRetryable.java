@@ -9,7 +9,6 @@ import org.springframework.web.client.HttpClientErrorException.TooManyRequests;
 @Retention(RetentionPolicy.RUNTIME)
 @Retryable(
         include = {TooManyRequests.class},
-        exclude = {Exception.class},
         maxAttempts = 3,
         backoff = @Backoff(delay = 3000, multiplier = 2))
 public @interface ApiRetryable {}
